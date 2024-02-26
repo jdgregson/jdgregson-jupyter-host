@@ -16,7 +16,6 @@ do
    GROUP=`echo $LINE | cut -d ";" -f 4`
 
    # Set the file/directory permissions
-   echo "$1"
    chmod $PERMISSIONS "$1/$ITEM"
 
    # Set the file/directory owner and groups
