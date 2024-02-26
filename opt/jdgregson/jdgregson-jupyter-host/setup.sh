@@ -43,6 +43,7 @@ chmod +x /opt/jdgregson/jdgregson-jupyter/*.sh
 echo "Deploying cloudflared"
 curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 dpkg -i cloudflared.deb
+echo "Cloudflared token: $CLOUDFLARED_TOKEN"
 cloudflared service install $CLOUDFLARED_TOKEN
 rm cloudflared.deb
 
