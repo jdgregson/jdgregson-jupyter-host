@@ -47,3 +47,5 @@ echo "Cloudflared token: $CLOUDFLARED_TOKEN"
 cloudflared service install $CLOUDFLARED_TOKEN
 rm cloudflared.deb
 
+/opt/jdgregson/jdgregson-jupyter/start.sh &
+
