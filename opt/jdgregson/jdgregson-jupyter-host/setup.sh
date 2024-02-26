@@ -8,6 +8,11 @@ if [ ! -f "/etc/lsb-release" ] || [ -z "grep '22.04' /etc/lsb-release" ]; then
     exit 1
 fi
 
+if [ ! -f "/root/secrets" ]; then
+    echo "ERROR: /root/secrets not found!"
+    exit 1
+fi
+
 echo "Installing updates and dependencies..."
 apt-get update
 NEEDRESTART_MODE=a apt-get upgrade --yes
@@ -32,4 +37,9 @@ rm -fr "$DEPLOY_DIR"
 echo "Deploying jdgregson-jupyter..."
 git clone https://github.com/jdgregson/jdgregson-jupyter.git /opt/jdgregson/jdgregson-jupyter
 chmod +x /opt/jdgregson/jdgregson-jupyter/*.sh
+
+echo "Deploying cloudflared"
+curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i cloudflared.deb
+sudo cloudflared service install $CLOUDFLARED_TOKEN
 
