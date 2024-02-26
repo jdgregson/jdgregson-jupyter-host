@@ -13,6 +13,9 @@ if [ ! -f "/root/secrets" ]; then
     exit 1
 fi
 
+source /root/secrets
+cd /tmp
+
 echo "Installing updates and dependencies..."
 apt-get update
 NEEDRESTART_MODE=a apt-get upgrade --yes
@@ -29,9 +32,8 @@ fi
 echo "Deploying jdgregson-jupyter-host..."
 DEPLOY_DIR=$(mktemp -d)
 git clone https://github.com/jdgregson/jdgregson-jupyter-host.git "$DEPLOY_DIR/"
-cd "$DEPLOY_DIR"
 "$DEPLOY_DIR/opt/jdgregson/jdgregson-jupyter-host/restore-permissions.sh" "$DEPLOY_DIR"
-cp -fr "$DEPLOY_DIR/*" /
+cp -fr "$DEPLOY_DIR"/* /
 rm -fr "$DEPLOY_DIR"
 
 echo "Deploying jdgregson-jupyter..."
@@ -42,4 +44,5 @@ echo "Deploying cloudflared"
 curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
 sudo dpkg -i cloudflared.deb
 sudo cloudflared service install $CLOUDFLARED_TOKEN
+rm cloudflared-linux-amd64.deb
 
