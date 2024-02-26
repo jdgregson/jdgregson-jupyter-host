@@ -8,12 +8,10 @@ if [ ! -f "/etc/lsb-release" ] || [ -z "grep '22.04' /etc/lsb-release" ]; then
     exit 1
 fi
 
-NEEDRESTART_MODE=a
-
 echo "Installing updates and dependencies..."
 apt-get update
-apt-get upgrade --yes
-apt-get install --yes \
+NEEDRESTART_MODE=a apt-get upgrade --yes
+NEEDRESTART_MODE=a apt-get install --yes \
     podman \
     unattended-upgrades
 
