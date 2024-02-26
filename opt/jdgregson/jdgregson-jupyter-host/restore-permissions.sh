@@ -27,7 +27,7 @@ do
    # Set the file/directory owner and groups
    chown $USER:$GROUP "$1/$ITEM"
 
-done < $DATABASE
+done < "$1/$DATABASE"
 IFS=$IFS_OLD
 
 echo "OK"
