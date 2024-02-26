@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# Sourece: https://stackoverflow.com/a/38163771
+# Setup script for jdgregson-jupyter-host
+# Usage:
+# Author: Omid Ariyan 
+# Author: Jonathan Gregson <hello@jdgregson.com>
+# Source: https://stackoverflow.com/a/38163771
 
 SELF_DIR=`git rev-parse --show-toplevel`
 DATABASE=/opt/jdgregson/jdgregson-jupyter-host/permissions

@@ -1,8 +1,13 @@
 #!/bin/bash
 
-# A hook script called by "git commit" with no arguments. The hook should
-# exit with non-zero status after issuing an appropriate message if it wants
-# to stop the commit.
+# Git hook used to save permissions of files in the repo.
+# Usage: Add this script as a pre-commit hook in the repo pushing the live
+#        config. It will generate a permissions database file and add it to
+#        the commit. This permissions database file must be used on hosts to
+#        restore these file permissions prior to rsyncing them over the
+#        target host's live filesystem.
+# Author: Omid Ariyan
+# Author: Jonathan Gregson <hello@jdgregson.com>
 # Source: https://stackoverflow.com/a/38163771
 
 SELF_DIR=`git rev-parse --show-toplevel`
