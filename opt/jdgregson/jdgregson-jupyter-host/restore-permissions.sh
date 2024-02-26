@@ -11,6 +11,8 @@ DATABASE=/opt/jdgregson/jdgregson-jupyter-host/permissions
 
 echo -n "Restoring permissions..."
 
+cd "$1"
+
 IFS_OLD=$IFS; IFS=$'\n'
 while read -r LINE || [[ -n "$LINE" ]];
 do
