@@ -10,7 +10,7 @@ fi
 
 echo "Installing updates and dependencies..."
 apt-get update
-apt-get upgrade
+apt-get upgrade -y
 apt-get install \
     podman \
     unattended-upgrades
