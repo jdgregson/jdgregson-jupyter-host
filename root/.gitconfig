@@ -3,3 +3,5 @@
 [user]
 	email = root@jdgregson-jupyter1.jdgregson.com
 	name = root@jdgregson-jupyter1.jdgregson.com
+[core]
+	editor = vim
