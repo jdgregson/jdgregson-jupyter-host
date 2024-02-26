@@ -14,7 +14,7 @@ if [ ! -f "/root/secrets" ]; then
 fi
 
 source /root/secrets
-cd /tmp
+cd ~
 
 echo "Installing updates and dependencies..."
 apt-get update
@@ -42,7 +42,7 @@ chmod +x /opt/jdgregson/jdgregson-jupyter/*.sh
 
 echo "Deploying cloudflared"
 curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-sudo dpkg -i cloudflared.deb
-sudo cloudflared service install $CLOUDFLARED_TOKEN
-rm cloudflared-linux-amd64.deb
+dpkg -i cloudflared.deb
+cloudflared service install $CLOUDFLARED_TOKEN
+rm cloudflared.deb
 
