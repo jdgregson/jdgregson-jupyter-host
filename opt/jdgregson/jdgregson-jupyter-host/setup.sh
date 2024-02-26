@@ -26,7 +26,7 @@ DEPLOY_DIR=$(mktemp -d)
 git clone https://github.com/jdgregson/jdgregson-jupyter-host.git "$DEPLOY_DIR/"
 cd "$DEPLOY_DIR"
 "$DEPLOY_DIR/opt/jdgregson/jdgregson-jupyter-host/restore-permissions.sh" "$DEPLOY_DIR"
-rsync --perms --verbose --recursive --exclude=.git "$DEPLOY_DIR/" /
+rsync --inplace --perms --verbose --recursive --exclude=.git "$DEPLOY_DIR/" /
 rm -fr "$DEPLOY_DIR"
 
 echo "Deploying jdgregson-jupyter..."
