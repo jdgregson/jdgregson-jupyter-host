@@ -1,0 +1,13 @@
+[Unit]
+Description=jdgregson-jupyter service
+
+[Service]
+Type=forking
+User=jupyteruser
+Group=jupyteruser
+ExecStart=/opt/jdgregson/jdgregson-jupyter/start.sh
+ExecStop=/opt/jdgregson/jdgregson-jupyter/stop.sh
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

@@ -23,10 +23,15 @@ NEEDRESTART_MODE=a apt-get install --yes \
     podman \
     unattended-upgrades
 
+echo "Creating and configuring user..."
 USER="jupyteruser"
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
     useradd -m "$USER"
+fi
+if [ ! -d "/home/$USER/notebooks" ]; then
+    mkdir "/home/$USER/notebooks"
+    chown $USER:$USER "/home/$USER/notebooks"
 fi
 
 echo "Deploying jdgregson-jupyter-host..."
@@ -47,5 +52,7 @@ echo "Cloudflared token: $CLOUDFLARED_TOKEN"
 cloudflared service install $CLOUDFLARED_TOKEN
 rm cloudflared.deb
 
-/opt/jdgregson/jdgregson-jupyter/start.sh &
+echo "Enabing and starting jdgregson-jupyter service..."
+systemctl enable jdgregson-jupyter
+systemctl start jdgregson-jupyter
 
