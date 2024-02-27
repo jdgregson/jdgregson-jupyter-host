@@ -8,12 +8,16 @@ if [ ! -f "/etc/lsb-release" ] || [ -z "grep '22.04' /etc/lsb-release" ]; then
     exit 1
 fi
 
-if [ ! -f "/root/secrets" ]; then
-    echo "ERROR: /root/secrets not found!"
+if [ ! -f "/root/host-secrets" ]; then
+    echo "ERROR: /root/host-secrets not found!"
+    exit 1
+fi
+if [ ! -f "/root/container-secrets" ]; then
+    echo "ERROR: /root/container-secrets not found!"
     exit 1
 fi
 
-source /root/secrets
+source /root/host-secrets
 cd ~
 
 echo "Installing updates and dependencies..."
@@ -33,6 +37,9 @@ if [ ! -d "/home/$USER/notebooks" ]; then
     mkdir "/home/$USER/notebooks"
     chown $USER:$USER "/home/$USER/notebooks"
 fi
+cp /root/container-secrets "/home/$USER/"
+chown $USER:$USER "/home/$USER/container-secrets"
+
 
 echo "Deploying jdgregson-jupyter-host..."
 DEPLOY_DIR=$(mktemp -d)
