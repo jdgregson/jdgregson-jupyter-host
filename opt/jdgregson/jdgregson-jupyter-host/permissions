@@ -1,13 +1,12 @@
+.gitignore;644;root;root
 README.md;644;root;root
 etc/apt/apt.conf.d/20auto-upgrades;644;root;root
 etc/apt/apt.conf.d/50unattended-upgrades;644;root;root
-etc/systemd/system/jdgregson-jupyter.service;644;root;root
 opt/jdgregson/jdgregson-jupyter-host/githooks/pre-commit;644;root;root
 opt/jdgregson/jdgregson-jupyter-host/permissions;644;root;root
 opt/jdgregson/jdgregson-jupyter-host/restore-permissions.sh;755;root;root
 opt/jdgregson/jdgregson-jupyter-host/setup.sh;755;root;root
 .;755;root;root
 etc/apt/apt.conf.d;755;root;root
-etc/systemd/system;755;root;root
 opt/jdgregson/jdgregson-jupyter-host/githooks;755;root;root
 opt/jdgregson/jdgregson-jupyter-host;755;root;root
