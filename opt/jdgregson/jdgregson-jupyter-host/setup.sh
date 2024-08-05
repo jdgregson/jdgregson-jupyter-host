@@ -31,6 +31,9 @@ echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
     useradd -m "$USER"
+    if [ -n "$HF_TOKEN" ]; then
+        echo "export HF_TOKEN=$HF_TOKEN" >> "/home/$USER/.profile"
+    fi
 fi
 if [ ! -d "/home/$USER/notebooks" ]; then
     mkdir "/home/$USER/notebooks"
@@ -61,6 +64,7 @@ Description=Jupyter
 [Service]
 Type=simple
 ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --LabApp.token='$JUPYTER_ACCESS_TOKEN'
+Environment="HF_TOKEN=$HF_TOKEN"
 
 WorkingDirectory=/home/$USER/notebooks
 User=$USER
