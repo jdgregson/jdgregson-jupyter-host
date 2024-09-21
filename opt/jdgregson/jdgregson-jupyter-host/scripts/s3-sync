@@ -1,0 +1,23 @@
+#!/bin/bash
+
+LOCAL_DIR="$1"
+S3_BUCKET="$2"
+
+sync_to_s3() {
+    aws s3 sync "$LOCAL_DIR" "s3://$S3_BUCKET" --delete
+}
+
+sync_from_s3() {
+    aws s3 sync "s3://$S3_BUCKET" "$LOCAL_DIR" --delete
+}
+
+sync_from_s3
+
+inotifywait -m -r -e modify,create,delete,move "$LOCAL_DIR" | while read -r directory events filename; do
+    sync_to_s3
+done &
+
+while true; do
+    sync_from_s3
+    sleep 300
+done

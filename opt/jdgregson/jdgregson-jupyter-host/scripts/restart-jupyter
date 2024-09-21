@@ -1,0 +1,4 @@
+#!/bin/bash
+
+kill $(ps x | grep jupyter-lab | grep -v grep | cut -d' ' -f2)
+
