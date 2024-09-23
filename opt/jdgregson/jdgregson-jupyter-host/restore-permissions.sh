@@ -2,7 +2,7 @@
 
 # Setup script for jdgregson-jupyter-host
 # Usage:
-# Author: Omid Ariyan 
+# Author: Omid Ariyan
 # Author: Jonathan Gregson <hello@jdgregson.com>
 # Source: https://stackoverflow.com/a/38163771
 
@@ -33,4 +33,3 @@ IFS=$IFS_OLD
 echo "OK"
 
 exit 0
-

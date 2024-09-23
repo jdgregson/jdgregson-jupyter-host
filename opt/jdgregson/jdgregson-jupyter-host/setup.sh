@@ -32,7 +32,21 @@ NEEDRESTART_MODE=a apt-get install --yes \
     awscli \
     inotify-tools \
     vim \
-    git
+    git \
+    ca-certificates \
+    curl \
+    gnupg \
+    gcc \
+    g++ \
+    make
+
+mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+NODE_MAJOR=20
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+apt-get update
+NEEDRESTART_MODE=a apt-get install --yes \
+    nodejs
 
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
@@ -57,7 +71,7 @@ if [ ! -d "/home/$USER" ]; then
     fi
 fi
 
-echo "Downloading notebooks..."
+echo "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
     chown $USER:$USER "$NOTEBOOK_DIR"
@@ -83,6 +97,18 @@ sudo pip3 install \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
     jupyter_scheduler
+
+echo "Configuring Jupyter..."
+mkdir /etc/jupyter
+cat >/etc/jupyter/jupyter_server_config.py <<EOF
+c.ServerApp.extra_static_paths = ['/opt/jdgregson/$APP/static']
+EOF
+
+echo "Installing Jupyter extensions..."
+for extension in $(find "/opt/jdgregson/$APP/extensions/" -mindepth 1 -maxdepth 1 -type d); do
+    echo "Installing $extension..."
+    jupyter labextension install "$extension"
+done
 
 echo "Creating Jupyter service..."
 cat >/etc/systemd/system/jupyter.service <<EOF

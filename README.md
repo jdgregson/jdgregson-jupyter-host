@@ -21,4 +21,3 @@ export AWS_SECRET_ACCESS_KEY=...
 ```
 curl https://raw.githubusercontent.com/jdgregson/jdgregson-jupyter-host/main/opt/jdgregson/jdgregson-jupyter-host/setup.sh | sudo bash
 ```
-

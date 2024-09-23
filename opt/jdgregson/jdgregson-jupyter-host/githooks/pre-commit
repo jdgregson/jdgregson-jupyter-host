@@ -36,4 +36,3 @@ IFS=$IFS_OLD
 git add $DATABASE -f
 
 echo "OK"
-
