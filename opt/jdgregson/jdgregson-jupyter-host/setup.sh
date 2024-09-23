@@ -48,6 +48,11 @@ apt-get update
 NEEDRESTART_MODE=a apt-get install --yes \
     nodejs
 
+sudo nano /etc/needrestart/needrestart.conf
+echo "$nrconf{restart} = 'a';" >> /etc/needrestart/needrestart.conf
+echo "$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
+echo "$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
+
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
@@ -117,7 +122,7 @@ Description=Jupyter
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --LabApp.token='$JUPYTER_ACCESS_TOKEN'
+ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --notebook-dir=$NOTEBOOK_DIR --LabApp.token='$JUPYTER_ACCESS_TOKEN'
 Environment="HF_TOKEN=$HF_TOKEN"
 
 WorkingDirectory=$NB_DIR

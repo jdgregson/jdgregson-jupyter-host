@@ -1,0 +1,8 @@
+{
+  "name": "jupyter-pwa",
+  "version": "0.1.0",
+  "jupyterlab": {
+    "extension": true
+  },
+  "main": "index.js"
+}
