@@ -125,7 +125,7 @@ Type=simple
 ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --notebook-dir=$NOTEBOOK_DIR --LabApp.token='$JUPYTER_ACCESS_TOKEN'
 Environment="HF_TOKEN=$HF_TOKEN"
 
-WorkingDirectory=$NB_DIR
+WorkingDirectory=$NOTEBOOK_DIR
 User=$USER
 Group=$USER
 
