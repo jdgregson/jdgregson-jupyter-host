@@ -51,7 +51,7 @@ NEEDRESTART_MODE=a apt-get install --yes \
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
-    useradd -m "$USER"
+    useradd -m -s /bin/bash "$USER"
     echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
     if [ -n "$HF_TOKEN" ]; then
         echo "export HF_TOKEN=$HF_TOKEN" >> "/home/$USER/.profile"
