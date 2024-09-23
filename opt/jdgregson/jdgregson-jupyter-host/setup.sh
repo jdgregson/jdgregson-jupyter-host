@@ -20,6 +20,7 @@ if [ ! -f "/root/secrets" ]; then
     exit 1
 fi
 
+export DEBIAN_FRONTEND=noninteractive
 source /root/secrets
 cd ~
 
