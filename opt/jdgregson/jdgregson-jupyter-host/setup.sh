@@ -25,8 +25,8 @@ cd ~
 
 echo "Installing updates and dependencies..."
 apt-get update
-NEEDRESTART_MODE=a apt-get upgrade --yes
-NEEDRESTART_MODE=a apt-get install --yes \
+NEEDRESTART_MODE=i apt-get upgrade --yes
+NEEDRESTART_MODE=i apt-get install --yes \
     python3-pip \
     unattended-upgrades \
     awscli \
@@ -45,11 +45,10 @@ curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg 
 NODE_MAJOR=20
 echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
 apt-get update
-NEEDRESTART_MODE=a apt-get install --yes \
+NEEDRESTART_MODE=i apt-get install --yes \
     nodejs
 
-sudo nano /etc/needrestart/needrestart.conf
-echo "$nrconf{restart} = 'a';" >> /etc/needrestart/needrestart.conf
+echo "$nrconf{restart} = 'i';" >> /etc/needrestart/needrestart.conf
 echo "$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
 echo "$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
 
@@ -162,3 +161,5 @@ EOF
 
 echo "Starting S3 Sync..."
 systemctl enable --now s3sync
+
+echo "$APP setup complete, REBOOT REQUIRED!"
