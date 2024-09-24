@@ -81,9 +81,9 @@ fi
 echo "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
-    chown $USER:$USER "$NOTEBOOK_DIR"
 fi
 aws s3 sync "s3://$NOTEBOOK_S3_BUCKET_NAME" "$NOTEBOOK_DIR"
+chown $USER:$USER "$NOTEBOOK_DIR" -R
 
 echo "Deploying cloudflared..."
 curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
@@ -103,7 +103,8 @@ sudo pip3 install \
     jupyterlab \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
-    jupyter_scheduler
+    jupyter_scheduler \
+    mitmproxy
 
 echo "Configuring Jupyter..."
 mkdir /etc/jupyter
@@ -164,5 +165,13 @@ EOF
 
 echo "Starting S3 Sync..."
 systemctl enable --now s3sync
+
+echo "Installing Microsoft Defender for Endpoint..."
+DEPLOY_DIR=$(mktemp -d)
+cd "$DEPLOY_DIR"
+curl "https://github.com/microsoft/mdatp-xplat/blob/master/linux/installation/mde_installer.sh" -o mde_installer.sh
+chmod +x mde_installer.sh
+#./mde_installer.sh --install --onboard
+#rm -fr "$DEPLOY_DIR"
 
 echo "$APP setup complete, REBOOT REQUIRED!"

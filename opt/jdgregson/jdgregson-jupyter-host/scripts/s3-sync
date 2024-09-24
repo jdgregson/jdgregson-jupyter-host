@@ -11,7 +11,7 @@ sync_from_s3() {
     aws s3 sync "s3://$S3_BUCKET" "$LOCAL_DIR" --delete
 }
 
-sync_from_s3
+aws s3 sync "s3://$S3_BUCKET" "$LOCAL_DIR"
 
 inotifywait -m -r -e modify,create,delete,move "$LOCAL_DIR" | while read -r directory events filename; do
     sync_to_s3
