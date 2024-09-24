@@ -39,7 +39,8 @@ NEEDRESTART_MODE=i apt-get install --yes \
     gnupg \
     gcc \
     g++ \
-    make
+    make \
+    mitmproxy
 
 if [ ! -f /etc/apt/keyrings/nodesource.gpg ]; then
     mkdir -p /etc/apt/keyrings
@@ -51,9 +52,9 @@ if [ ! -f /etc/apt/keyrings/nodesource.gpg ]; then
         nodejs
 fi
 
-echo "$nrconf{restart} = 'i';" >> /etc/needrestart/needrestart.conf
-echo "$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
-echo "$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
+echo "\$nrconf{restart} = 'i';" >> /etc/needrestart/needrestart.conf
+echo "\$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
+echo "\$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
 
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
@@ -103,8 +104,7 @@ sudo pip3 install \
     jupyterlab \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
-    jupyter_scheduler \
-    mitmproxy
+    jupyter_scheduler
 
 echo "Configuring Jupyter..."
 mkdir /etc/jupyter
