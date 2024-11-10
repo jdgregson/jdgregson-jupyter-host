@@ -4,7 +4,7 @@ This repository contains the host configuration for hosts powering jupyter.jdgre
 
 jupyter.jdgregson.com is a JupyterLab implementation configured with:
  - PWA support
- - Notebook syncing to S3
+ - Notebook and setting syncing to S3
  - Cloudflare tunnel support
  - AWS, Hugging Face, etc. creds pre-set
 

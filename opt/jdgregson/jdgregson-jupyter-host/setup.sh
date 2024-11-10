@@ -39,8 +39,7 @@ NEEDRESTART_MODE=i apt-get install --yes \
     gnupg \
     gcc \
     g++ \
-    make \
-    mitmproxy
+    make
 
 if [ ! -f /etc/apt/keyrings/nodesource.gpg ]; then
     mkdir -p /etc/apt/keyrings
@@ -59,32 +58,43 @@ echo "\$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
-    useradd -m -s /bin/bash "$USER"
-    echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
-    if [ -n "$HF_TOKEN" ]; then
-        echo "export HF_TOKEN=$HF_TOKEN" >> "/home/$USER/.profile"
-    fi
-    if [ -n "$AWS_ACCESS_KEY_ID" ]; then
-        echo "export AWS_REGION=$AWS_REGION" >> "/home/$USER/.profile"
-        echo "export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> "/home/$USER/.profile"
-        echo "export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> "/home/$USER/.profile"
-
-        mkdir "/home/$USER/.aws"
-        echo "[default]" > "/home/$USER/.aws/config"
-        echo "region = $AWS_REGION" >> "/home/$USER/.aws/config"
-        echo "output = json" >> "/home/$USER/.aws/config"
-        echo "[default]" > "/home/$USER/.aws/credentials"
-        echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> "/home/$USER/.aws/credentials"
-        echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> "/home/$USER/.aws/credentials"
-    fi
+useradd -m -s /bin/bash "$USER"
 fi
+if [ -n "$HF_TOKEN" ]; then
+    echo "export HF_TOKEN=$HF_TOKEN" >> "/home/$USER/.profile"
+fi
+if [ -n "$AWS_ACCESS_KEY_ID" ]; then
+    echo "Configuring AWS credentials..."
+    echo "export AWS_REGION=$AWS_REGION" >> "/home/$USER/.profile"
+    echo "export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> "/home/$USER/.profile"
+    echo "export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> "/home/$USER/.profile"
+
+    mkdir "/home/$USER/.aws"
+    echo "[default]" > "/home/$USER/.aws/config"
+    echo "region = $AWS_REGION" >> "/home/$USER/.aws/config"
+    echo "output = json" >> "/home/$USER/.aws/config"
+    echo "[default]" > "/home/$USER/.aws/credentials"
+    echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> "/home/$USER/.aws/credentials"
+    echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> "/home/$USER/.aws/credentials"
+fi
+echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
 
 echo "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
 fi
+mkdir "/home/$USER/.jupyter"
+mkdir "/home/$USER/.jupyter/lab"
 aws s3 sync "s3://$NOTEBOOK_S3_BUCKET_NAME" "$NOTEBOOK_DIR"
-chown $USER:$USER "$NOTEBOOK_DIR" -R
+if [ -d "$NOTEBOOK_DIR/.jupyter-sync" ]; then
+    ln -s "$NOTEBOOK_DIR/.jupyter-sync/jupyter_lab_config.py" "/home/$USER/.jupyter/jupyter_lab_config.py"
+    ln -s "$NOTEBOOK_DIR/.jupyter-sync/jupyter_server_config.py" "/home/$USER/.jupyter/jupyter_server_config.py"
+    ln -s "$NOTEBOOK_DIR/.jupyter-sync/custom" "/home/$USER/.jupyter/custom"
+    ln -s "$NOTEBOOK_DIR/.jupyter-sync/lab/user-settings" "/home/$USER/.jupyter/lab/user-settings"
+fi
+
+echo "Restoring permissions..."
+chown $USER:$USER "/home/$USER" -R
 
 echo "Deploying cloudflared..."
 curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
@@ -127,7 +137,7 @@ Description=Jupyter
 Type=simple
 ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --notebook-dir=$NOTEBOOK_DIR --LabApp.token='$JUPYTER_ACCESS_TOKEN'
 Environment="HF_TOKEN=$HF_TOKEN"
-
+Environment="WORKERS_AI_TOKEN=$WORKERS_AI_TOKEN"
 WorkingDirectory=$NOTEBOOK_DIR
 User=$USER
 Group=$USER
@@ -169,9 +179,9 @@ systemctl enable --now s3sync
 echo "Installing Microsoft Defender for Endpoint..."
 DEPLOY_DIR=$(mktemp -d)
 cd "$DEPLOY_DIR"
-curl "https://github.com/microsoft/mdatp-xplat/blob/master/linux/installation/mde_installer.sh" -o mde_installer.sh
+curl "https://raw.githubusercontent.com/microsoft/mdatp-xplat/refs/heads/master/linux/installation/mde_installer.sh" -o mde_installer.sh
 chmod +x mde_installer.sh
-#./mde_installer.sh --install --onboard
-#rm -fr "$DEPLOY_DIR"
+./mde_installer.sh --install
+rm -fr "$DEPLOY_DIR"
 
 echo "$APP setup complete, REBOOT REQUIRED!"
