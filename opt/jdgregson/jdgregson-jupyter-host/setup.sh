@@ -4,7 +4,7 @@
 # Author: Jonathan Gregson <hello@jdgregson.com>
 
 USER="jupyteruser"
-IP=0.0.0.0
+IP=127.0.0.1
 PORT=8888
 
 APP="jdgregson-jupyter-host"
