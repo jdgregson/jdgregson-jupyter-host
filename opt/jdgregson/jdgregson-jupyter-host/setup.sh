@@ -6,6 +6,12 @@
 USER="jupyteruser"
 IP=127.0.0.1
 PORT=8888
+PKG_NAME="jdgregson-jupyter-host"
+TZ="America/Los_Angeles"
+
+# Green and red echo
+gecho() { echo -e "\033[1;32m$1\033[0m"; }
+recho() { echo -e "\033[1;31m$1\033[0m"; }
 
 APP="jdgregson-jupyter-host"
 NOTEBOOK_DIR="/home/$USER/notebooks"
@@ -19,6 +25,9 @@ if [ ! -f "/root/secrets" ]; then
     echo "ERROR: /root/secrets not found"
     exit 1
 fi
+
+gecho "Setting time zone to $TZ..."
+timedatectl set-timezone "$TZ"
 
 export DEBIAN_FRONTEND=noninteractive
 source /root/secrets
@@ -41,8 +50,8 @@ apt-get update
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 
 # Install updates and dependencies
-echo "Installing updates and dependencies..."
-apt-get remove needrestart
+gecho "Installing updates and dependencies..."
+apt-get remove needrestart --yes
 apt-get upgrade --yes
 apt-get install --yes \
     python3-pip \
@@ -86,7 +95,7 @@ apt-get install --yes nvidia-container-toolkit
 systemctl restart docker
 
 # Create jupyter user
-echo "Creating and configuring user..."
+gecho "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
     useradd -m -s /bin/bash "$USER"
@@ -116,7 +125,7 @@ fi
 echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
 
 # Initial S3 sync
-echo "Downloading notebooks from S3..."
+gecho "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
 fi
@@ -130,18 +139,18 @@ if [ -d "$NOTEBOOK_DIR/.jupyter-sync" ]; then
     ln -s "$NOTEBOOK_DIR/.jupyter-sync/lab/user-settings" "/home/$USER/.jupyter/lab/user-settings"
 fi
 
-echo "Restoring permissions..."
+gecho "Restoring permissions..."
 chown $USER:$USER "/home/$USER" -R
 
 # Install Jupyterlab service
-echo "Deploying $APP..."
+gecho "Deploying $APP..."
 DEPLOY_DIR=$(mktemp -d)
 git clone https://github.com/jdgregson/$APP.git "$DEPLOY_DIR/"
 "$DEPLOY_DIR/opt/jdgregson/$APP/restore-permissions.sh" "$DEPLOY_DIR"
 cp -fr "$DEPLOY_DIR"/* /
 rm -fr "$DEPLOY_DIR"
 
-echo "Installing Jupyter and plugins..."
+gecho "Installing Jupyter and plugins..."
 pip3 install \
     jupyterlab \
     jupyter-resource-usage \
@@ -151,19 +160,19 @@ pip3 install \
     amazon-q-developer-jupyterlab-ext
 
 # Configure Jupyterlab service
-echo "Configuring Jupyter..."
+gecho "Configuring Jupyter..."
 mkdir /etc/jupyter
 cat >/etc/jupyter/jupyter_server_config.py <<EOF
 c.ServerApp.extra_static_paths = ['/opt/jdgregson/$APP/static']
 EOF
 
-echo "Installing Jupyter extensions..."
+gecho "Installing Jupyter extensions..."
 for extension in $(find "/opt/jdgregson/$APP/extensions/" -mindepth 1 -maxdepth 1 -type d); do
     echo "Installing $extension..."
     jupyter labextension install "$extension"
 done
 
-echo "Creating Jupyter service..."
+gecho "Creating Jupyter service..."
 cat >/etc/systemd/system/jupyter.service <<EOF
 [Unit]
 Description=Jupyter
@@ -184,11 +193,11 @@ RestartSec=1s
 WantedBy=multi-user.target
 EOF
 
-echo "Starting Jupyter on $IP:$PORT..."
+gecho "Starting Jupyter on $IP:$PORT..."
 systemctl enable --now jupyter
 
 # Configue S3 sync
-echo "Creating S3 Sync service..."
+gecho "Creating S3 Sync service..."
 cat >/etc/systemd/system/s3sync.service <<EOF
 [Unit]
 Description=S3 Sync
@@ -209,11 +218,11 @@ SyslogIdentifier=s3sync
 WantedBy=multi-user.target
 EOF
 
-echo "Starting S3 Sync..."
+gecho "Starting S3 Sync..."
 systemctl enable --now s3sync
 
 # Install MDE
-echo "Installing Microsoft Defender for Endpoint..."
+gecho "Installing Microsoft Defender for Endpoint..."
 DEPLOY_DIR=$(mktemp -d)
 cd "$DEPLOY_DIR"
 curl -o microsoft.list https://packages.microsoft.com/config/ubuntu/24.04/prod.list
@@ -223,10 +232,11 @@ apt-get update
 apt-get install --yes mdatp
 
 # Install Cloudflared
-echo "Installing cloudflared..."
+gecho "Installing cloudflared..."
 mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
-apt-get update && apt-get install --yes cloudflared
+apt-get update
+apt-get install --yes cloudflared
 
-echo "$APP setup complete, REBOOT REQUIRED!"
+gecho "$APP setup complete, REBOOT REQUIRED!"
