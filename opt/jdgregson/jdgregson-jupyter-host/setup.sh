@@ -153,7 +153,7 @@ cp -fr "$DEPLOY_DIR"/* /
 rm -fr "$DEPLOY_DIR"
 
 gecho "Installing Jupyter and plugins..."
-pip3 install \
+pip3 install --break-system-packages \
     jupyterlab \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
