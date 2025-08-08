@@ -10,8 +10,8 @@ PORT=8888
 APP="jdgregson-jupyter-host"
 NOTEBOOK_DIR="/home/$USER/notebooks"
 
-if [ ! -f "/etc/lsb-release" ] || [ -z "$(grep '22.04' /etc/lsb-release)" ]; then
-    echo "ERROR: $APP only supports Ubuntu Server 22.04"
+if [ ! -f "/etc/lsb-release" ] || [ -z "$(grep '24.04' /etc/lsb-release)" ]; then
+    echo "ERROR: $APP only supports Ubuntu Server 24.04"
     exit 1
 fi
 
@@ -24,42 +24,78 @@ export DEBIAN_FRONTEND=noninteractive
 source /root/secrets
 cd ~
 
-echo "Installing updates and dependencies..."
+# Add Docker's repository
 apt-get update
-NEEDRESTART_MODE=i apt-get upgrade --yes
-NEEDRESTART_MODE=i apt-get install --yes \
+apt-get install --yes ca-certificates curl
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update
+
+# Add NodeJS repository
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# Install updates and dependencies
+echo "Installing updates and dependencies..."
+apt-get remove needrestart
+apt-get upgrade --yes
+apt-get install --yes \
     python3-pip \
     unattended-upgrades \
     awscli \
     inotify-tools \
+    libplist-utils \
     vim \
     git \
-    ca-certificates \
-    curl \
     gnupg \
+    gpg \
     gcc \
     g++ \
-    make
+    make \
+    nodejs \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    apt-transport-https \
+    docker-compose-plugin
 
-if [ ! -f /etc/apt/keyrings/nodesource.gpg ]; then
-    mkdir -p /etc/apt/keyrings
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-    NODE_MAJOR=20
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-    apt-get update
-    NEEDRESTART_MODE=i apt-get install --yes \
-        nodejs
-fi
+# Install CUDA dependencies
+apt-get install --yes --no-install-recommends nvidia-driver-535-server
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin
+mv cuda-ubuntu2404.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
-echo "\$nrconf{restart} = 'i';" >> /etc/needrestart/needrestart.conf
-echo "\$nrconf{kernelhints} = 0;" >> /etc/needrestart/needrestart.conf
-echo "\$nrconf{notify} = 'none';" >> /etc/needrestart/needrestart.conf
+wget https://developer.download.nvidia.com/compute/cuda/12.8.0/local_installers/cuda-repo-ubuntu2404-12-8-local_12.8.0-570.86.10-1_amd64.deb
+dpkg -i cuda-repo-ubuntu2404-12-8-local_12.8.0-570.86.10-1_amd64.deb
 
+cp /var/cuda-repo-ubuntu2404-12-8-local/cuda-*-keyring.gpg /usr/share/keyrings/
+apt-get update
+apt-get install --yes cuda-toolkit-12-8
+
+distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
+curl -s -L https://nvidia.github.io/libnvidia-container/gpgkey | gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+
+apt-get update
+apt-get install --yes nvidia-container-toolkit
+systemctl restart docker
+
+# Create jupyter user
 echo "Creating and configuring user..."
 if [ ! -d "/home/$USER" ]; then
     echo "Creating user $USER..."
-useradd -m -s /bin/bash "$USER"
+    useradd -m -s /bin/bash "$USER"
 fi
+
+usermod -aG docker $USER
+echo "$USER ALL=(ALL) NOPASSWD: /sbin/reboot" | tee /etc/sudoers.d/99-$USER-reboot
+
+# Set env vars
 if [ -n "$HF_TOKEN" ]; then
     echo "export HF_TOKEN=$HF_TOKEN" >> "/home/$USER/.profile"
 fi
@@ -79,6 +115,7 @@ if [ -n "$AWS_ACCESS_KEY_ID" ]; then
 fi
 echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
 
+# Initial S3 sync
 echo "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
@@ -96,12 +133,7 @@ fi
 echo "Restoring permissions..."
 chown $USER:$USER "/home/$USER" -R
 
-echo "Deploying cloudflared..."
-curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-dpkg -i cloudflared.deb
-cloudflared service install $CLOUDFLARED_TOKEN
-rm cloudflared.deb
-
+# Install Jupyterlab service
 echo "Deploying $APP..."
 DEPLOY_DIR=$(mktemp -d)
 git clone https://github.com/jdgregson/$APP.git "$DEPLOY_DIR/"
@@ -110,12 +142,15 @@ cp -fr "$DEPLOY_DIR"/* /
 rm -fr "$DEPLOY_DIR"
 
 echo "Installing Jupyter and plugins..."
-sudo pip3 install \
+pip3 install \
     jupyterlab \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
-    jupyter_scheduler
+    jupyter_scheduler \
+    jupyter-ai[all] \
+    amazon-q-developer-jupyterlab-ext
 
+# Configure Jupyterlab service
 echo "Configuring Jupyter..."
 mkdir /etc/jupyter
 cat >/etc/jupyter/jupyter_server_config.py <<EOF
@@ -152,6 +187,7 @@ EOF
 echo "Starting Jupyter on $IP:$PORT..."
 systemctl enable --now jupyter
 
+# Configue S3 sync
 echo "Creating S3 Sync service..."
 cat >/etc/systemd/system/s3sync.service <<EOF
 [Unit]
@@ -176,12 +212,21 @@ EOF
 echo "Starting S3 Sync..."
 systemctl enable --now s3sync
 
+# Install MDE
 echo "Installing Microsoft Defender for Endpoint..."
 DEPLOY_DIR=$(mktemp -d)
 cd "$DEPLOY_DIR"
-curl "https://raw.githubusercontent.com/microsoft/mdatp-xplat/refs/heads/master/linux/installation/mde_installer.sh" -o mde_installer.sh
-chmod +x mde_installer.sh
-./mde_installer.sh --install
-rm -fr "$DEPLOY_DIR"
+curl -o microsoft.list https://packages.microsoft.com/config/ubuntu/24.04/prod.list
+mv ./microsoft.list /etc/apt/sources.list.d/microsoft-prod.list
+curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null
+apt-get update
+apt-get install --yes mdatp
+
+# Install Cloudflared
+echo "Installing cloudflared..."
+mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
+apt-get update && apt-get install --yes cloudflared
 
 echo "$APP setup complete, REBOOT REQUIRED!"
