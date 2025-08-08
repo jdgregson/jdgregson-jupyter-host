@@ -6,15 +6,13 @@
 USER="jupyteruser"
 IP=127.0.0.1
 PORT=8888
-PKG_NAME="jdgregson-jupyter-host"
 TZ="America/Los_Angeles"
+APP="jdgregson-jupyter-host"
+NOTEBOOK_DIR="/home/$USER/notebooks"
 
 # Green and red echo
 gecho() { echo -e "\033[1;32m$1\033[0m"; }
 recho() { echo -e "\033[1;31m$1\033[0m"; }
-
-APP="jdgregson-jupyter-host"
-NOTEBOOK_DIR="/home/$USER/notebooks"
 
 if [ ! -f "/etc/lsb-release" ] || [ -z "$(grep '24.04' /etc/lsb-release)" ]; then
     echo "ERROR: $APP only supports Ubuntu Server 24.04"
@@ -26,12 +24,14 @@ if [ ! -f "/root/secrets" ]; then
     exit 1
 fi
 
+DEPLOY_DIR=$(mktemp -d)
+cd "$DEPLOY_DIR"
+
 gecho "Setting time zone to $TZ..."
 timedatectl set-timezone "$TZ"
 
 export DEBIAN_FRONTEND=noninteractive
 source /root/secrets
-cd ~
 
 # Add Docker's repository
 apt-get update
@@ -54,9 +54,10 @@ gecho "Installing updates and dependencies..."
 apt-get remove needrestart --yes
 apt-get upgrade --yes
 apt-get install --yes \
+    python3 \
     python3-pip \
+    unzip \
     unattended-upgrades \
-    awscli \
     inotify-tools \
     libplist-utils \
     vim \
@@ -75,6 +76,7 @@ apt-get install --yes \
     docker-compose-plugin
 
 # Install CUDA dependencies
+gecho "Installing CUDA dependencies..."
 apt-get install --yes --no-install-recommends nvidia-driver-535-server
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-ubuntu2404.pin
 mv cuda-ubuntu2404.pin /etc/apt/preferences.d/cuda-repository-pin-600
@@ -223,8 +225,6 @@ systemctl enable --now s3sync
 
 # Install MDE
 gecho "Installing Microsoft Defender for Endpoint..."
-DEPLOY_DIR=$(mktemp -d)
-cd "$DEPLOY_DIR"
 curl -o microsoft.list https://packages.microsoft.com/config/ubuntu/24.04/prod.list
 mv ./microsoft.list /etc/apt/sources.list.d/microsoft-prod.list
 curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | tee /usr/share/keyrings/microsoft-prod.gpg > /dev/null
@@ -238,5 +238,11 @@ curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyri
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
 apt-get update
 apt-get install --yes cloudflared
+
+# Install awscli
+gecho "Installing awscli"
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
 
 gecho "$APP setup complete, REBOOT REQUIRED!"
