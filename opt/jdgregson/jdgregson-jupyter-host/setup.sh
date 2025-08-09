@@ -240,7 +240,7 @@ apt-get update
 apt-get install --yes mdatp
 
 # Install Cloudflared
-gecho "Install`ing cloudflared..."
+gecho "Installing cloudflared..."
 mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list

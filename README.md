@@ -7,6 +7,10 @@ jupyter.jdgregson.com is a JupyterLab implementation configured with:
  - Notebook and setting syncing to S3
  - Cloudflare tunnel support
  - AWS, Hugging Face, etc. creds pre-set
+ - Microsfot Defender for Endpoint
+ - Docker
+ - GPU support with support for GPU passthrough to containers
+ - VS Code Server (Coder)
 
 ## Deployment
 
