@@ -9,6 +9,7 @@ PORT=8888
 TZ="America/Los_Angeles"
 APP="jdgregson-jupyter-host"
 NOTEBOOK_DIR="/home/$USER/notebooks"
+VENV_DIR="/home/$USER/venv"
 
 # Green and red echo
 gecho() { echo -e "\033[1;32m$1\033[0m"; }
@@ -56,6 +57,7 @@ apt-get upgrade --yes
 apt-get install --yes \
     python3 \
     python3-pip \
+    python3-venv \
     unzip \
     unattended-upgrades \
     inotify-tools \
@@ -125,6 +127,7 @@ if [ -n "$AWS_ACCESS_KEY_ID" ]; then
     echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> "/home/$USER/.aws/credentials"
 fi
 echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
+echo "source $VENV_DIR/bin/activate" >> "/home/$USER/.profile"
 
 # Initial S3 sync
 gecho "Downloading notebooks from S3..."
@@ -141,6 +144,10 @@ if [ -d "$NOTEBOOK_DIR/.jupyter-sync" ]; then
     ln -s "$NOTEBOOK_DIR/.jupyter-sync/lab/user-settings" "/home/$USER/.jupyter/lab/user-settings"
 fi
 
+# Create virtual environment
+gecho "Creating Python virtual environment..."
+sudo -u $USER python3 -m venv "$VENV_DIR"
+
 gecho "Restoring permissions..."
 chown $USER:$USER "/home/$USER" -R
 
@@ -153,7 +160,8 @@ cp -fr "$DEPLOY_DIR"/* /
 rm -fr "$DEPLOY_DIR"
 
 gecho "Installing Jupyter and plugins..."
-pip3 install --break-system-packages \
+apt-get remove python3-rich python3-jsonschema --yes
+sudo -u $USER "$VENV_DIR/bin/pip" install \
     jupyterlab \
     jupyter-resource-usage \
     jupyterlab_theme_solarized_dark \
@@ -171,7 +179,7 @@ EOF
 gecho "Installing Jupyter extensions..."
 for extension in $(find "/opt/jdgregson/$APP/extensions/" -mindepth 1 -maxdepth 1 -type d); do
     echo "Installing $extension..."
-    jupyter labextension install "$extension"
+    sudo -u $USER "$VENV_DIR/bin/jupyter" labextension install "$extension"
 done
 
 gecho "Creating Jupyter service..."
@@ -181,7 +189,7 @@ Description=Jupyter
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/env jupyter lab --ip=$IP --port=$PORT --notebook-dir=$NOTEBOOK_DIR --LabApp.token='$JUPYTER_ACCESS_TOKEN'
+ExecStart=$VENV_DIR/bin/jupyter lab --ip=$IP --port=$PORT --notebook-dir=$NOTEBOOK_DIR --LabApp.token='$JUPYTER_ACCESS_TOKEN'
 Environment="HF_TOKEN=$HF_TOKEN"
 Environment="WORKERS_AI_TOKEN=$WORKERS_AI_TOKEN"
 WorkingDirectory=$NOTEBOOK_DIR
@@ -232,7 +240,7 @@ apt-get update
 apt-get install --yes mdatp
 
 # Install Cloudflared
-gecho "Installing cloudflared..."
+gecho "Install`ing cloudflared..."
 mkdir -p --mode=0755 /usr/share/keyrings
 curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | tee /etc/apt/sources.list.d/cloudflared.list
@@ -244,5 +252,8 @@ gecho "Installing awscli"
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
 unzip awscliv2.zip
 ./aws/install
+
+# Install VS Code (Coder)
+curl -L https://coder.com/install.sh | sh
 
 gecho "$APP setup complete, REBOOT REQUIRED!"
