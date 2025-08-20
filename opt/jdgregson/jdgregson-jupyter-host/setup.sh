@@ -140,6 +140,7 @@ gecho "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
     mkdir "$NOTEBOOK_DIR"
 fi
+mkdir -p "/home/$USER/.local/share/jupyter"
 mkdir "/home/$USER/.jupyter"
 mkdir "/home/$USER/.jupyter/lab"
 aws s3 sync "s3://$NOTEBOOK_S3_BUCKET_NAME" "$NOTEBOOK_DIR"
@@ -148,6 +149,7 @@ if [ -d "$NOTEBOOK_DIR/.jupyter-sync" ]; then
     ln -s "$NOTEBOOK_DIR/.jupyter-sync/jupyter_server_config.py" "/home/$USER/.jupyter/jupyter_server_config.py"
     ln -s "$NOTEBOOK_DIR/.jupyter-sync/custom" "/home/$USER/.jupyter/custom"
     ln -s "$NOTEBOOK_DIR/.jupyter-sync/lab/user-settings" "/home/$USER/.jupyter/lab/user-settings"
+    ln -s "$NOTEBOOK_DIR/.jupyter-sync/share/jupyter" "/home/$USER/.local/share/jupyter"
 fi
 
 # Create virtual environment
