@@ -10,7 +10,8 @@ jupyter.jdgregson.com is a JupyterLab implementation configured with:
  - Microsfot Defender for Endpoint
  - Docker
  - GPU support with support for GPU passthrough to containers
- - VS Code Server (Coder)
+ - VS Code Server
+ - ComfyUI
 
 ## Deployment
 
@@ -24,6 +25,7 @@ export NOTEBOOK_S3_BUCKET_NAME=...
 export AWS_REGION=us-west-2
 export AWS_ACCESS_KEY_ID=...
 export AWS_SECRET_ACCESS_KEY=...
+export VSCODE_ACCESS_TOKEN=...
 ```
 
 2. Deploy:

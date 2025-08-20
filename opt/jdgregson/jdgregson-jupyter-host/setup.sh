@@ -129,6 +129,12 @@ fi
 echo "export PATH=\$PATH:/opt/jdgregson/$APP/scripts" >> "/home/$USER/.profile"
 echo "source $VENV_DIR/bin/activate" >> "/home/$USER/.profile"
 
+# Install awscli
+gecho "Installing awscli"
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+./aws/install
+
 # Initial S3 sync
 gecho "Downloading notebooks from S3..."
 if [ ! -d "$NOTEBOOK_DIR" ]; then
@@ -247,13 +253,52 @@ echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudf
 apt-get update
 apt-get install --yes cloudflared
 
-# Install awscli
-gecho "Installing awscli"
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-./aws/install
+# Install VS Code Server
+systemctl enable --now snapd
+systemctl restart snapd
+snap install code
+mkdir -p "/home/$USER/.vscode-server/data/"
+echo "$VSCODE_ACCESS_TOKEN" > "/home/$USER/.vscode-server/data/.token"
 
-# Install VS Code (Coder)
-curl -L https://coder.com/install.sh | sh
+cat >/etc/systemd/system/vscode.service <<EOF
+[Unit]
+Description=VS Code Server
+After=network.target
+
+[Service]
+User=$USER
+Group=$USER
+ExecStart=/snap/bin/code serve-web --accept-server-license-terms --port 8080 --connection-token-file /home/$USER/.vscode-server/data/.token
+Restart=always
+RestartSec=10
+WorkingDirectory=/home/$USER
+Environment=PATH=/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl daemon-reload
+systemctl enable --now vscode
+
+# Install ComfyUI service
+cat >/etc/systemd/system/comfyui.service <<EOF
+[Unit]
+Description=ComfyUI
+After=network.target
+
+[Service]
+User=$USER
+Group=$USER
+ExecStart=/home/$USER/venv/bin/comfy launch -- --listen 127.0.0.1 --port 8188
+Restart=always
+RestartSec=10
+WorkingDirectory=/home/$USER
+Environment=PATH=/home/jupyteruser/venv/bin:/usr/local/bin:/usr/bin:/bin
+
+[Install]
+WantedBy=default.target
+EOF
+systemctl daemon-reload
+systemctl enable --now comfyui
 
 gecho "$APP setup complete, REBOOT REQUIRED!"
